@@ -1,0 +1,27 @@
+require('dotenv').config();  // ← ADD THIS as line 1
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const { connectDB } = require('./config/db');
+const { validateEnv } = require('./config/env');
+const errorHandler = require('./middlewares/errorHandler');
+const routes = require('./routes');
+
+validateEnv();
+connectDB();
+
+const app = express();
+
+app.use(helmet());
+app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(express.json());
+
+app.use('/api', routes);
+
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
