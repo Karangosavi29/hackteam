@@ -1,48 +1,70 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { matchApi } from '@/api/match.api';
 import { hackathonApi } from '@/api/hackathon.api';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCheck, Users, Star, Crown } from 'lucide-react';
-import { getRoleBadgeColor } from '@/lib/utils';
+import { UserCheck, Users, Star, Crown, SlidersHorizontal, CheckCircle2 } from 'lucide-react';
+import { getRoleBadgeColor, ROLES, EXPERIENCE_LEVELS } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function MatchPage() {
   const [hackathonId, setHackathonId] = useState('');
+
+  // Filters
+  const [skillFilter, setSkillFilter] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [experienceFilter, setExperienceFilter] = useState('');
+  const [minScore, setMinScore] = useState(0);
 
   const { data: hackathonsData } = useQuery({
     queryKey: ['hackathons'],
     queryFn: () => hackathonApi.getAll({ limit: 50 }),
   });
 
-  const { data: teammatesData, isLoading: loadingTeammates } = useQuery({
-    queryKey: ['match', 'teammates'],
-    queryFn: () => matchApi.getTeammates({ limit: 10 }),
+  const { data: teammatesData, isLoading: loadingTeammates, isError: teammatesError, refetch: refetchTeammates } = useQuery({
+    queryKey: ['match', 'teammates', hackathonId],
+    queryFn: () => matchApi.getTeammates({ hackathonId: hackathonId || undefined, limit: 20 }),
   });
 
-  const { data: teamsData, isLoading: loadingTeams } = useQuery({
+  const { data: teamsData, isLoading: loadingTeams, isError: teamsError, refetch: refetchTeams } = useQuery({
     queryKey: ['match', 'teams', hackathonId],
     queryFn: () => matchApi.getTeams({ hackathonId, limit: 10 }),
     enabled: !!hackathonId,
   });
 
   const hackathons = hackathonsData?.data?.hackathons || [];
-  const teammates = teammatesData?.data?.suggestions || [];
-  const teams = teamsData?.data?.suggestions || [];
+
+  const teammates = useMemo(() => {
+    const all = teammatesData?.data?.suggestions || [];
+    return all.filter((item) => {
+      if (item.score < minScore) return false;
+      if (roleFilter && item.user.role !== roleFilter) return false;
+      if (experienceFilter && item.user.experienceLevel !== experienceFilter) return false;
+      if (skillFilter && !item.user.skills?.some((s) => s.toLowerCase().includes(skillFilter.toLowerCase()))) return false;
+      return true;
+    });
+  }, [teammatesData, minScore, roleFilter, experienceFilter, skillFilter]);
+
+  const allTeammates = teammatesData?.data?.suggestions || [];
+
+  const teams = useMemo(() => {
+    const all = teamsData?.data?.suggestions || [];
+    return all.filter((item) => item.score >= minScore);
+  }, [teamsData, minScore]);
 
   const ScoreBar = ({ score }: { score: number }) => (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
         <div
           className="h-full bg-violet-500 rounded-full transition-all"
-          style={{ width: `${Math.round(score * 100)}%` }}
+          style={{ width: `${score}%` }}
         />
       </div>
       <span className="text-xs font-medium text-violet-600 w-8 text-right">
-        {Math.round(score * 100)}%
+        {score}%
       </span>
     </div>
   );
@@ -51,11 +73,75 @@ export default function MatchPage() {
     <div className="max-w-4xl mx-auto py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <UserCheck className="h-6 w-6 text-violet-600" /> Smart Match
+          <UserCheck className="h-6 w-6 text-violet-600" /> Find Your Perfect Teammate
         </h1>
         <p className="text-sm text-slate-500 mt-1">
-          AI-powered suggestions based on your skills and role
+          Transparent, skill-based recommendations — every score comes with the reasons behind it
         </p>
+      </div>
+
+      {/* Filters */}
+      <Card className="shadow-sm">
+        <CardContent className="pt-4">
+          <div className="flex items-center gap-2 mb-3 text-sm font-medium text-slate-600">
+            <SlidersHorizontal className="h-4 w-4" /> Filters
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <input
+              placeholder="Skill contains..."
+              value={skillFilter}
+              onChange={(e) => setSkillFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+            />
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+            >
+              <option value="">Any role</option>
+              {ROLES.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+            <select
+              value={experienceFilter}
+              onChange={(e) => setExperienceFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+            >
+              <option value="">Any experience</option>
+              {EXPERIENCE_LEVELS.map((l) => (
+                <option key={l.value} value={l.value}>{l.label}</option>
+              ))}
+            </select>
+            <select
+              value={minScore}
+              onChange={(e) => setMinScore(Number(e.target.value))}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+            >
+              <option value={0}>Any compatibility</option>
+              <option value={50}>50%+ compatible</option>
+              <option value={70}>70%+ compatible</option>
+              <option value={85}>85%+ compatible</option>
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Optional hackathon context for teammate suggestions */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-slate-700">
+          Hackathon <span className="text-slate-400 font-normal">(optional — sharpens suggestions to required skills)</span>
+        </label>
+        <select
+          value={hackathonId}
+          onChange={(e) => setHackathonId(e.target.value)}
+          className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+        >
+          <option value="">No hackathon selected</option>
+          {hackathons.map((h: any) => (
+            <option key={h._id} value={h._id}>{h.title}</option>
+          ))}
+        </select>
       </div>
 
       <Tabs defaultValue="teammates">
@@ -72,13 +158,26 @@ export default function MatchPage() {
         <TabsContent value="teammates" className="mt-4 space-y-3">
           {loadingTeammates ? (
             Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-32 rounded-xl" />)
-          ) : teammates.length === 0 ? (
+          ) : teammatesError ? (
+            <div className="text-center py-16 text-slate-400">
+              <p className="mb-3">Unable to load recommendations.</p>
+              <button onClick={() => refetchTeammates()} className="text-violet-600 text-sm hover:underline">
+                Try Again
+              </button>
+            </div>
+          ) : allTeammates.length === 0 ? (
             <div className="text-center py-16 text-slate-400">
               <UserCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p>Add skills to your profile to get teammate suggestions</p>
+              <p>No suitable teammates found.</p>
+              <p className="text-xs mt-1">Try adding more skills to your profile.</p>
               <Link to="/profile/edit" className="text-violet-600 text-sm hover:underline mt-2 block">
                 Update profile →
               </Link>
+            </div>
+          ) : teammates.length === 0 ? (
+            <div className="text-center py-16 text-slate-400">
+              <UserCheck className="h-10 w-10 mx-auto mb-3 opacity-30" />
+              <p>No teammates match your filters.</p>
             </div>
           ) : (
             teammates.map((item: any) => (
@@ -106,7 +205,7 @@ export default function MatchPage() {
                     <div className="flex items-center gap-1 shrink-0">
                       <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                       <span className="text-sm font-semibold text-slate-700">
-                        {Math.round(item.score * 100)}%
+                        {item.score}%
                       </span>
                     </div>
                   </div>
@@ -114,20 +213,18 @@ export default function MatchPage() {
                   {/* Match score bar */}
                   <ScoreBar score={item.score} />
 
-                  {/* Match details */}
-                  <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                    {item.matchDetails.sharedSkills?.length > 0 && (
-                      <span className="text-green-600">
-                        ✓ {item.matchDetails.sharedSkills.length} shared skill{item.matchDetails.sharedSkills.length > 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {item.matchDetails.complementaryRole && (
-                      <span className="text-violet-600">✓ Complementary role</span>
-                    )}
-                    {item.matchDetails.sameCollege && (
-                      <span className="text-blue-600">✓ Same college</span>
-                    )}
-                  </div>
+                  {/* Why this match? */}
+                  {item.reasons?.length > 0 && (
+                    <div className="space-y-1 pt-1 border-t border-slate-100">
+                      <p className="text-xs font-medium text-slate-500 pt-1">Why this match?</p>
+                      {item.reasons.map((reason: string, i: number) => (
+                        <div key={i} className="flex items-start gap-1.5 text-xs text-slate-600">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                          {reason}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Shared skills */}
                   {item.matchDetails.sharedSkills?.length > 0 && (
@@ -139,6 +236,13 @@ export default function MatchPage() {
                       ))}
                     </div>
                   )}
+
+                  <Link
+                    to={`/profile/${item.user._id}`}
+                    className="inline-block text-xs font-medium text-violet-600 hover:underline pt-1"
+                  >
+                    View Profile →
+                  </Link>
                 </CardContent>
               </Card>
             ))
@@ -147,34 +251,25 @@ export default function MatchPage() {
 
         {/* Teams Tab */}
         <TabsContent value="teams" className="mt-4 space-y-4">
-          {/* Hackathon selector */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">
-              Select a hackathon to find matching teams
-            </label>
-            <select
-              value={hackathonId}
-              onChange={(e) => setHackathonId(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
-            >
-              <option value="">Choose a hackathon...</option>
-              {hackathons.map((h: any) => (
-                <option key={h._id} value={h._id}>{h.title}</option>
-              ))}
-            </select>
-          </div>
-
           {!hackathonId ? (
             <div className="text-center py-16 text-slate-400">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p>Select a hackathon to see matching teams</p>
+              <p>Select a hackathon above to see matching teams</p>
             </div>
           ) : loadingTeams ? (
             Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-36 rounded-xl" />)
+          ) : teamsError ? (
+            <div className="text-center py-16 text-slate-400">
+              <p className="mb-3">Unable to load recommendations.</p>
+              <button onClick={() => refetchTeams()} className="text-violet-600 text-sm hover:underline">
+                Try Again
+              </button>
+            </div>
           ) : teams.length === 0 ? (
             <div className="text-center py-16 text-slate-400">
               <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p>No matching teams found for this hackathon</p>
+              <p>No suitable teams found.</p>
+              <p className="text-xs mt-1">Try adding more skills to your profile.</p>
             </div>
           ) : (
             teams.map((item: any) => (
@@ -200,26 +295,24 @@ export default function MatchPage() {
                     <div className="flex items-center gap-1 shrink-0">
                       <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
                       <span className="text-sm font-semibold text-slate-700">
-                        {Math.round(item.score * 100)}%
+                        {item.score}%
                       </span>
                     </div>
                   </div>
 
                   <ScoreBar score={item.score} />
 
-                  <div className="flex flex-wrap gap-3 text-xs">
-                    {item.matchDetails.roleNeeded && (
-                      <span className="text-violet-600">✓ Your role is needed</span>
-                    )}
-                    {item.matchDetails.spotsLeft > 0 && (
-                      <span className="text-green-600">✓ {item.matchDetails.spotsLeft} spot{item.matchDetails.spotsLeft > 1 ? 's' : ''} left</span>
-                    )}
-                    {item.matchDetails.sharedSkills?.length > 0 && (
-                      <span className="text-blue-600">
-                        ✓ {item.matchDetails.sharedSkills.length} shared skill{item.matchDetails.sharedSkills.length > 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+                  {item.reasons?.length > 0 && (
+                    <div className="space-y-1 pt-1 border-t border-slate-100">
+                      <p className="text-xs font-medium text-slate-500 pt-1">Why this match?</p>
+                      {item.reasons.map((reason: string, i: number) => (
+                        <div key={i} className="flex items-start gap-1.5 text-xs text-slate-600">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5" />
+                          {reason}
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {item.team.requiredRoles?.length > 0 && (
                     <div className="flex flex-wrap gap-1">

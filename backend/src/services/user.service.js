@@ -11,10 +11,12 @@ const getById = async (id) => {
 };
 
 const updateProfile = async (userId, updates) => {
-  // Sanitize skills — remove duplicates and empty strings
-  if (updates.skills) {
-    updates.skills = [...new Set(updates.skills.filter(Boolean))];
-  }
+  // Sanitize array fields — remove duplicates and empty strings
+  ['skills', 'interests', 'availability'].forEach((field) => {
+    if (updates[field]) {
+      updates[field] = [...new Set(updates[field].filter(Boolean))];
+    }
+  });
 
   const user = await User.findByIdAndUpdate(
     userId,

@@ -71,9 +71,20 @@ const update = async (id, userId, data) => {
     throw err;
   }
 
+  // Allowlist fields — prevents overwriting `organizer` or other protected fields
+  const allowed = [
+    'title', 'description', 'startDate', 'endDate', 'registrationDeadline',
+    'mode', 'location', 'maxTeamSize', 'minTeamSize', 'tags', 'requiredSkills',
+    'prizePool', 'registrationLink',
+  ];
+  const updates = {};
+  allowed.forEach((field) => {
+    if (data[field] !== undefined) updates[field] = data[field];
+  });
+
   const updated = await Hackathon.findByIdAndUpdate(
     id,
-    { $set: data },
+    { $set: updates },
     { new: true, runValidators: true }
   ).populate('organizer', 'name email avatar');
 

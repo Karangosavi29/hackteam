@@ -18,6 +18,34 @@ export const SKILLS_LIST = [
   'Java', 'Spring Boot', 'Go', 'Rust', 'C++',
 ];
 
+export const INTERESTS_LIST = [
+  'Web Development', 'Mobile Apps', 'AI/ML', 'Blockchain', 'Game Development',
+  'Cybersecurity', 'Cloud Computing', 'IoT', 'AR/VR', 'Open Source',
+  'Fintech', 'Healthtech', 'EdTech', 'Sustainability', 'Data Science',
+  'DevOps', 'Robotics', 'Social Impact',
+];
+
+export const EXPERIENCE_LEVELS = [
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
+
+export const AVAILABILITY_OPTIONS = [
+  { value: 'weekdays', label: 'Weekdays' },
+  { value: 'weekends', label: 'Weekends' },
+  { value: 'evenings', label: 'Evenings' },
+  { value: 'flexible', label: 'Flexible' },
+];
+
+/** Tailwind classes for a compatibility score badge, banded by score. */
+export const getScoreColor = (score: number) => {
+  if (score >= 80) return 'text-green-600 bg-green-50';
+  if (score >= 60) return 'text-violet-600 bg-violet-50';
+  if (score >= 40) return 'text-amber-600 bg-amber-50';
+  return 'text-slate-500 bg-slate-50';
+};
+
 export const ROLES = [
   { value: 'frontend', label: 'Frontend Developer' },
   { value: 'backend', label: 'Backend Developer' },

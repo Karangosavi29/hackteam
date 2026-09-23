@@ -46,6 +46,8 @@ const hackathonSchema = new mongoose.Schema(
       default: 1,
     },
     tags: [{ type: String }],
+    // Skills the hackathon is looking for — powers the team skill-coverage feature
+    requiredSkills: [{ type: String }],
     prizePool: {
       type: String,
       default: '',

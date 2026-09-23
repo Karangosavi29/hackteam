@@ -21,4 +21,21 @@ const getTeamSuggestions = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { getTeammateSuggestions, getTeamSuggestions };
+const getCompatibility = asyncHandler(async (req, res) => {
+  const { otherUserId } = req.params;
+  const result = await matchService.getCompatibility(req.user._id, otherUserId);
+  res.status(200).json({ success: true, ...result });
+});
+
+const getTeamSkillCoverage = asyncHandler(async (req, res) => {
+  const { teamId } = req.params;
+  const result = await matchService.getTeamSkillCoverage(teamId);
+  res.status(200).json({ success: true, ...result });
+});
+
+module.exports = {
+  getTeammateSuggestions,
+  getTeamSuggestions,
+  getCompatibility,
+  getTeamSkillCoverage,
+};

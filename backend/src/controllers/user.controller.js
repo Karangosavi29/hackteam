@@ -7,7 +7,10 @@ const getProfile = asyncHandler(async (req, res) => {
 });
 
 const updateProfile = asyncHandler(async (req, res) => {
-  const allowed = ['name', 'college', 'bio', 'skills', 'role', 'github', 'linkedin', 'avatar'];
+  const allowed = [
+    'name', 'college', 'bio', 'skills', 'role', 'github', 'linkedin', 'avatar',
+    'interests', 'experienceLevel', 'availability',
+  ];
   const updates = {};
   allowed.forEach((field) => {
     if (req.body[field] !== undefined) updates[field] = req.body[field];

@@ -10,6 +10,9 @@ export interface User {
   linkedin: string;
   avatar: string;
   teams: string[];
+  interests: string[];
+  experienceLevel: 'beginner' | 'intermediate' | 'advanced';
+  availability: ('weekdays' | 'weekends' | 'evenings' | 'flexible')[];
   createdAt: string;
 }
 
@@ -26,6 +29,7 @@ export interface Hackathon {
   maxTeamSize: number;
   minTeamSize: number;
   tags: string[];
+  requiredSkills: string[];
   prizePool: string;
   registrationLink: string;
   isVerified: boolean;
@@ -58,9 +62,20 @@ export interface Request {
   createdAt: string;
 }
 
+export interface CompatibilityBreakdown {
+  skills: number;
+  interests: number;
+  experience: number;
+  availability: number;
+  role: number;
+  other: number;
+}
+
 export interface TeammateSuggestion {
   user: User;
   score: number;
+  breakdown: CompatibilityBreakdown;
+  reasons: string[];
   matchDetails: {
     sharedSkills: string[];
     complementaryRole: boolean;
@@ -71,11 +86,73 @@ export interface TeammateSuggestion {
 export interface TeamSuggestion {
   team: Team;
   score: number;
+  reasons: string[];
   matchDetails: {
     roleNeeded: boolean;
     spotsLeft: number;
     sharedSkills: string[];
   };
+}
+
+export interface CompatibilityResult {
+  userA: User;
+  userB: User;
+  score: number;
+  breakdown: CompatibilityBreakdown;
+  reasons: string[];
+  sharedSkills: string[];
+  sharedInterests: string[];
+  sharedAvailability: string[];
+}
+
+export interface SkillCoverageItem {
+  skill: string;
+  covered: boolean;
+}
+
+export interface TeamSkillCoverage {
+  teamId: string;
+  hackathonTitle: string;
+  requiredSkills: string[];
+  coverage: SkillCoverageItem[];
+  missingSkills: string[];
+  percentage: number;
+  compatibilityScore: number | null;
+}
+
+export interface Task {
+  _id: string;
+  team: string;
+  title: string;
+  description: string;
+  assignedTo: Pick<User, '_id' | 'name' | 'avatar' | 'role'> | null;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  dueDate: string | null;
+  createdBy: Pick<User, '_id' | 'name' | 'avatar'>;
+  createdAt: string;
+}
+
+export interface Notification {
+  _id: string;
+  recipient: string;
+  sender: Pick<User, '_id' | 'name' | 'avatar'> | null;
+  type:
+    | 'TEAM_REQUEST'
+    | 'REQUEST_ACCEPTED'
+    | 'REQUEST_REJECTED'
+    | 'TEAM_JOINED'
+    | 'TEAM_MEMBER_REMOVED'
+    | 'TEAM_INVITATION'
+    | 'TASK_ASSIGNED'
+    | 'TASK_COMPLETED'
+    | 'HACKATHON_DEADLINE';
+  title: string;
+  message: string;
+  relatedId: string | null;
+  relatedType: 'Team' | 'Request' | 'Task' | 'Hackathon' | null;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface AuthTokens {
@@ -94,4 +171,47 @@ export interface PaginatedResponse<T> {
   page: number;
   pages: number;
   items: T[];
+}
+
+export interface Notification {
+  _id: string;
+  recipient: string;
+  sender: Pick<User, '_id' | 'name' | 'avatar'> | null;
+  type:
+    | 'TEAM_REQUEST'
+    | 'REQUEST_ACCEPTED'
+    | 'REQUEST_REJECTED'
+    | 'TEAM_JOINED'
+    | 'TEAM_MEMBER_REMOVED'
+    | 'TEAM_INVITATION'
+    | 'TASK_ASSIGNED'
+    | 'TASK_COMPLETED'
+    | 'HACKATHON_DEADLINE';
+  title: string;
+  message: string;
+  relatedId: string | null;
+  relatedType: 'Team' | 'Request' | 'Task' | 'Hackathon' | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface Task {
+  _id: string;
+  team: string;
+  title: string;
+  description: string;
+  assignedTo: Pick<User, '_id' | 'name' | 'avatar' | 'role'> | null;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  dueDate: string | null;
+  createdBy: Pick<User, '_id' | 'name' | 'avatar'>;
+  createdAt: string;
+}
+
+export interface Message {
+  _id: string;
+  teamId: string;
+  senderId: Pick<User, '_id' | 'name' | 'avatar'>;
+  message: string;
+  createdAt: string;
 }

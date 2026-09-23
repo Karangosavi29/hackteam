@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, X } from 'lucide-react';
-import { ROLES, SKILLS_LIST } from '@/lib/utils';
+import { ROLES, SKILLS_LIST, INTERESTS_LIST, EXPERIENCE_LEVELS, AVAILABILITY_OPTIONS } from '@/lib/utils';
 import { useState } from 'react';
 
 const profileSchema = z.object({
@@ -19,6 +19,7 @@ const profileSchema = z.object({
   college: z.string().min(2, 'College is required'),
   bio: z.string().max(300, 'Bio max 300 characters').optional(),
   role: z.enum(['frontend', 'backend', 'fullstack', 'design', 'ml', 'devops', 'other']),
+  experienceLevel: z.enum(['beginner', 'intermediate', 'advanced']),
   github: z.string().url('Enter a valid URL').optional().or(z.literal('')),
   linkedin: z.string().url('Enter a valid URL').optional().or(z.literal('')),
 });
@@ -30,6 +31,9 @@ export default function EditProfilePage() {
   const { user, updateUser } = useAuthStore();
   const [skills, setSkills] = useState<string[]>(user?.skills || []);
   const [skillSearch, setSkillSearch] = useState('');
+  const [interests, setInterests] = useState<string[]>(user?.interests || []);
+  const [interestSearch, setInterestSearch] = useState('');
+  const [availability, setAvailability] = useState<string[]>(user?.availability || []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -38,13 +42,14 @@ export default function EditProfilePage() {
       college: user?.college || '',
       bio: user?.bio || '',
       role: user?.role || 'other',
+      experienceLevel: user?.experienceLevel || 'beginner',
       github: user?.github || '',
       linkedin: user?.linkedin || '',
     },
   });
 
   const { mutate, isPending, error } = useMutation({
-    mutationFn: (data: ProfileForm) => userApi.updateProfile({ ...data, skills }),
+    mutationFn: (data: ProfileForm) => userApi.updateProfile({ ...data, skills, interests, availability: availability as any }),
     onSuccess: (res) => {
       updateUser(res.data.user);
       navigate('/profile');
@@ -61,6 +66,23 @@ export default function EditProfilePage() {
   };
 
   const removeSkill = (skill: string) => setSkills(skills.filter((s) => s !== skill));
+
+  const filteredInterests = INTERESTS_LIST.filter(
+    (i) => i.toLowerCase().includes(interestSearch.toLowerCase()) && !interests.includes(i)
+  );
+
+  const addInterest = (interest: string) => {
+    if (!interests.includes(interest)) setInterests([...interests, interest]);
+    setInterestSearch('');
+  };
+
+  const removeInterest = (interest: string) => setInterests(interests.filter((i) => i !== interest));
+
+  const toggleAvailability = (value: string) => {
+    setAvailability((prev) =>
+      prev.includes(value) ? prev.filter((a) => a !== value) : [...prev, value]
+    );
+  };
 
   return (
     <div className="max-w-2xl mx-auto py-8">
@@ -115,6 +137,43 @@ export default function EditProfilePage() {
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
+              <p className="text-xs text-slate-400">
+                Used as your preferred role in teammate matching — different roles score as complementary.
+              </p>
+            </div>
+
+            {/* Experience Level */}
+            <div className="space-y-1.5">
+              <Label>Experience Level</Label>
+              <select
+                {...register('experienceLevel')}
+                className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-violet-500"
+              >
+                {EXPERIENCE_LEVELS.map((lvl) => (
+                  <option key={lvl.value} value={lvl.value}>{lvl.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Availability */}
+            <div className="space-y-2">
+              <Label>Availability</Label>
+              <div className="flex flex-wrap gap-2">
+                {AVAILABILITY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => toggleAvailability(opt.value)}
+                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
+                      availability.includes(opt.value)
+                        ? 'bg-violet-600 text-white border-violet-600'
+                        : 'bg-white text-slate-600 border-input hover:border-violet-300'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Skills */}
@@ -163,6 +222,55 @@ export default function EditProfilePage() {
                       className="px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
                     >
                       + Add "{skillSearch}"
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Interests */}
+            <div className="space-y-2">
+              <Label>Interests <span className="text-slate-400 text-xs">(topics you'd like to build in)</span></Label>
+
+              {interests.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-slate-50 rounded-lg border">
+                  {interests.map((interest) => (
+                    <Badge key={interest} variant="secondary" className="gap-1 pr-1">
+                      {interest}
+                      <button type="button" onClick={() => removeInterest(interest)}>
+                        <X className="h-3 w-3 hover:text-red-500" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              <Input
+                placeholder="Search interests — AI/ML, Fintech, Web3..."
+                value={interestSearch}
+                onChange={(e) => setInterestSearch(e.target.value)}
+              />
+
+              {interestSearch && (
+                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 border rounded-lg bg-white">
+                  {filteredInterests.length > 0 ? (
+                    filteredInterests.slice(0, 12).map((interest) => (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => addInterest(interest)}
+                        className="px-3 py-1 text-xs rounded-full bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 transition-colors"
+                      >
+                        + {interest}
+                      </button>
+                    ))
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => addInterest(interestSearch)}
+                      className="px-3 py-1 text-xs rounded-full bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                    >
+                      + Add "{interestSearch}"
                     </button>
                   )}
                 </div>

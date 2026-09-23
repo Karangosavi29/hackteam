@@ -27,6 +27,21 @@ const userSchema = new mongoose.Schema(
       enum: ['frontend', 'backend', 'fullstack', 'design', 'ml', 'devops', 'other'],
       default: 'other',
     },
+    // Used by the matching engine (see match.service.js) as "preferred role" —
+    // reuses this field rather than adding a duplicate one, since `role` already
+    // captures the discipline a user wants to contribute to a team.
+    interests: [{ type: String }],
+    experienceLevel: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'advanced'],
+      default: 'beginner',
+    },
+    availability: [
+      {
+        type: String,
+        enum: ['weekdays', 'weekends', 'evenings', 'flexible'],
+      },
+    ],
     github: { type: String, default: '' },
     linkedin: { type: String, default: '' },
     avatar: { type: String, default: '' },
@@ -35,6 +50,9 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Supports skill-based candidate pre-filtering in match.service.js
+userSchema.index({ skills: 1 });
 
 userSchema.set('toJSON', {
   transform: (doc, ret) => {
