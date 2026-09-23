@@ -1,5 +1,6 @@
 const Team = require('../models/team.model');
 const User = require('../models/user.model');
+const notificationService = require('./notification.service');
 
 const create = async (userId, data) => {
   const team = await Team.create({
@@ -149,6 +150,47 @@ const removeMember = async (teamId, leaderId, memberId) => {
 
   await Team.findByIdAndUpdate(teamId, { $pull: { members: memberId } });
   await User.findByIdAndUpdate(memberId, { $pull: { teams: teamId } });
+
+  await notificationService.create({
+    recipientId: memberId,
+    senderId: leaderId,
+    type: 'TEAM_MEMBER_REMOVED',
+    title: 'Removed from team',
+    message: `You were removed from ${team.name}`,
+    relatedId: teamId,
+    relatedType: 'Team',
+  });
 };
 
-module.exports = { create, getAll, getById, update, disband, leaveTeam, removeMember };
+const transferLeadership = async (teamId, currentLeaderId, newLeaderId) => {
+  const team = await Team.findById(teamId);
+  if (!team) {
+    const err = new Error('Team not found');
+    err.status = 404;
+    throw err;
+  }
+
+  if (team.leader.toString() !== currentLeaderId.toString()) {
+    const err = new Error('Only the current team leader can transfer leadership');
+    err.status = 403;
+    throw err;
+  }
+
+  const isMember = team.members.some((m) => m.toString() === newLeaderId.toString());
+  if (!isMember) {
+    const err = new Error('New leader must be an existing team member');
+    err.status = 400;
+    throw err;
+  }
+
+  team.leader = newLeaderId;
+  await team.save();
+
+  return team.populate([
+    { path: 'leader', select: 'name email avatar role' },
+    { path: 'members', select: 'name email avatar role skills' },
+    { path: 'hackathon', select: 'title startDate mode location' },
+  ]);
+};
+
+module.exports = { create, getAll, getById, update, disband, leaveTeam, removeMember, transferLeadership };

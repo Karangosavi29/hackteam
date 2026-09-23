@@ -19,4 +19,7 @@ export const teamApi = {
 
   removeMember: (teamId: string, userId: string) =>
     api.delete(`/teams/${teamId}/members/${userId}`),
+
+  transferLeadership: (teamId: string, newLeaderId: string) =>
+    api.post<{ team: Team }>(`/teams/${teamId}/transfer-leadership`, { newLeaderId }),
 };

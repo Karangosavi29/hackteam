@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Crown, Users, ArrowLeft, LogOut, UserMinus, Send } from 'lucide-react';
+import { Crown, Users, ArrowLeft, LogOut, UserMinus, Send, LayoutDashboard } from 'lucide-react';
 import { getRoleBadgeColor } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -105,6 +105,14 @@ export default function TeamDetailPage() {
               </Button>
             )}
           </div>
+
+          {isMember && (
+            <Link to={`/teams/${id}/dashboard`} className="mt-3 inline-block">
+              <Button size="sm" variant="outline" className="gap-1.5">
+                <LayoutDashboard className="h-3.5 w-3.5" /> Open Team Dashboard
+              </Button>
+            </Link>
+          )}
 
           {team.description && (
             <p className="text-slate-600 mt-3 text-sm leading-relaxed">{team.description}</p>

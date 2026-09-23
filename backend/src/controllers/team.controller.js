@@ -37,4 +37,19 @@ const removeMember = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, message: 'Member removed successfully' });
 });
 
-module.exports = { createTeam, getTeams, getTeam, updateTeam, disbandTeam, leaveTeam, removeMember };
+const transferLeadership = asyncHandler(async (req, res) => {
+  const { newLeaderId } = req.body;
+  const team = await teamService.transferLeadership(req.params.id, req.user._id, newLeaderId);
+  res.status(200).json({ success: true, team });
+});
+
+module.exports = {
+  createTeam,
+  getTeams,
+  getTeam,
+  updateTeam,
+  disbandTeam,
+  leaveTeam,
+  removeMember,
+  transferLeadership,
+};
