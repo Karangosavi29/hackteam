@@ -6,6 +6,8 @@ const hackathonRoutes = require('./hackathon.routes');
 const teamRoutes = require('./team.routes');
 const requestRoutes = require('./request.routes');
 const matchRoutes = require('./match.routes');
+const notificationRoutes = require('./notification.routes');
+const taskRoutes = require('./task.routes');
 
 router.get('/', (req, res) => res.json({ message: 'HackTeam API is live' }));
 router.use('/auth', authRoutes);
@@ -14,5 +16,7 @@ router.use('/hackathons', hackathonRoutes);
 router.use('/teams', teamRoutes);
 router.use('/requests', requestRoutes);
 router.use('/match', matchRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/tasks', taskRoutes);
 
 module.exports = router;

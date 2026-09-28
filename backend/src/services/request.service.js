@@ -1,6 +1,7 @@
 const Request = require('../models/request.model');
 const Team = require('../models/team.model');
 const User = require('../models/user.model');
+const notificationService = require('./notification.service');
 
 const send = async (senderId, { type, teamId, toUserId, message }) => {
   const team = await Team.findById(teamId);
@@ -66,6 +67,22 @@ const send = async (senderId, { type, teamId, toUserId, message }) => {
     team: teamId,
     hackathon: team.hackathon,
     message,
+  });
+
+  // Notify the recipient — TEAM_REQUEST for someone asking to join,
+  // TEAM_INVITATION for a leader inviting someone in.
+  const sender = await User.findById(from).select('name');
+  await notificationService.create({
+    recipientId: to,
+    senderId: from,
+    type: type === 'invite' ? 'TEAM_INVITATION' : 'TEAM_REQUEST',
+    title: type === 'invite' ? 'Team invitation' : 'New team request',
+    message:
+      type === 'invite'
+        ? `${sender?.name || 'A team leader'} invited you to join ${team.name}`
+        : `${sender?.name || 'Someone'} wants to join ${team.name}`,
+    relatedId: request._id,
+    relatedType: 'Request',
   });
 
   return request.populate([
@@ -152,6 +169,40 @@ const accept = async (requestId, userId) => {
     { status: 'rejected' }
   );
 
+  // Notify the "other party" — whoever didn't perform the accept action.
+  // (join: from=requester, to=leader who accepts -> notify requester.
+  //  invite: from=leader, to=invitee who accepts -> notify leader.)
+  // In both cases that's `request.from`, since `to` is always the accepter (enforced above).
+  const accepter = await User.findById(userId).select('name');
+  await notificationService.create({
+    recipientId: request.from,
+    senderId: userId,
+    type: 'REQUEST_ACCEPTED',
+    title: 'Request accepted',
+    message: `${accepter?.name || 'Someone'} accepted your request for ${team.name}`,
+    relatedId: request._id,
+    relatedType: 'Request',
+  });
+
+  // Let existing teammates know someone new joined
+  const updatedTeam = await Team.findById(request.team).select('members name');
+  const notifyTargets = updatedTeam.members.filter(
+    (m) => m.toString() !== newMemberId.toString() && m.toString() !== userId.toString()
+  );
+  await Promise.all(
+    notifyTargets.map((memberId) =>
+      notificationService.create({
+        recipientId: memberId,
+        senderId: newMemberId,
+        type: 'TEAM_JOINED',
+        title: 'New teammate',
+        message: `A new member joined ${updatedTeam.name}`,
+        relatedId: request.team,
+        relatedType: 'Team',
+      })
+    )
+  );
+
   return request;
 };
 
@@ -177,6 +228,19 @@ const reject = async (requestId, userId) => {
 
   request.status = 'rejected';
   await request.save();
+
+  const team = await Team.findById(request.team).select('name');
+  const rejecter = await User.findById(userId).select('name');
+  await notificationService.create({
+    recipientId: request.from,
+    senderId: userId,
+    type: 'REQUEST_REJECTED',
+    title: 'Request declined',
+    message: `${rejecter?.name || 'The team'} declined your request for ${team?.name || 'the team'}`,
+    relatedId: request._id,
+    relatedType: 'Request',
+  });
+
   return request;
 };
 

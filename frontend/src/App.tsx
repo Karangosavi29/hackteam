@@ -11,6 +11,9 @@ import HackathonDetailPage from '@/pages/hackathons/HackathonDetailPage';
 import CreateHackathonPage from '@/pages/hackathons/CreateHackathonPage';
 import TeamListPage from '@/pages/teams/TeamListPage';
 import TeamDetailPage from '@/pages/teams/TeamDetailPage';
+import TeamDashboardPage from '@/pages/teams/TeamDashboardPage';
+import TeamTasksPage from '@/pages/teams/TeamTasksPage';
+import TeamChatPage from '@/pages/teams/TeamChatPage';
 import CreateTeamPage from '@/pages/teams/CreateTeamPage';
 import RequestsPage from '@/pages/requests/RequestsPage';
 import MatchPage from '@/pages/match/MatchPage';
@@ -43,6 +46,9 @@ export default function App() {
           <Route path="/profile/edit" element={<ProtectedRoute><EditProfilePage /></ProtectedRoute>} />
           <Route path="/hackathons/create" element={<ProtectedRoute><CreateHackathonPage /></ProtectedRoute>} />
           <Route path="/teams/create" element={<ProtectedRoute><CreateTeamPage /></ProtectedRoute>} />
+          <Route path="/teams/:teamId/dashboard" element={<ProtectedRoute><TeamDashboardPage /></ProtectedRoute>} />
+          <Route path="/teams/:teamId/tasks" element={<ProtectedRoute><TeamTasksPage /></ProtectedRoute>} />
+          <Route path="/teams/:teamId/chat" element={<ProtectedRoute><TeamChatPage /></ProtectedRoute>} />
           <Route path="/requests" element={<ProtectedRoute><RequestsPage /></ProtectedRoute>} />
           <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
