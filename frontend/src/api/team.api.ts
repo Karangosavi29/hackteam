@@ -1,5 +1,5 @@
 import api from './axios';
-import { Team } from '@/types';
+import { Team, TeamAnalytics } from '@/types';
 
 export const teamApi = {
   getAll: (params?: { hackathon?: string; isOpen?: boolean; page?: number; limit?: number }) =>
@@ -7,10 +7,10 @@ export const teamApi = {
 
   getById: (id: string) => api.get<{ team: Team }>(`/teams/${id}`),
 
-  create: (data: Partial<Team> & { hackathon: string }) =>
+  create: (data: Omit<Partial<Team>, 'hackathon'> & { hackathon: string }) =>
     api.post<{ team: Team }>('/teams', data),
 
-  update: (id: string, data: Partial<Team>) =>
+  update: (id: string, data: Partial<Omit<Team, 'hackathon'>>) =>
     api.put<{ team: Team }>(`/teams/${id}`, data),
 
   disband: (id: string) => api.delete(`/teams/${id}`),
@@ -22,4 +22,7 @@ export const teamApi = {
 
   transferLeadership: (teamId: string, newLeaderId: string) =>
     api.post<{ team: Team }>(`/teams/${teamId}/transfer-leadership`, { newLeaderId }),
+
+  getAnalytics: (teamId: string) =>
+    api.get<TeamAnalytics>(`/teams/${teamId}/analytics`),
 };

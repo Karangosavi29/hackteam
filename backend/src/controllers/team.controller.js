@@ -17,6 +17,12 @@ const getTeam = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, team });
 });
 
+const getTeamAnalytics = asyncHandler(async (req, res) => {
+  const analytics = await teamService.getAnalytics(req.params.teamId, req.user._id);
+  res.status(200).json({ success: true, ...analytics });
+});
+
+
 const updateTeam = asyncHandler(async (req, res) => {
   const team = await teamService.update(req.params.id, req.user._id, req.body);
   res.status(200).json({ success: true, team });
@@ -52,4 +58,6 @@ module.exports = {
   leaveTeam,
   removeMember,
   transferLeadership,
+  getTeamAnalytics,
+
 };

@@ -1,6 +1,8 @@
 const Team = require('../models/team.model');
 const User = require('../models/user.model');
+const Task = require('../models/task.model');
 const notificationService = require('./notification.service');
+const { computeSkillCoverage } = require('./match.service');
 
 const create = async (userId, data) => {
   const team = await Team.create({
@@ -193,4 +195,96 @@ const transferLeadership = async (teamId, currentLeaderId, newLeaderId) => {
   ]);
 };
 
-module.exports = { create, getAll, getById, update, disband, leaveTeam, removeMember, transferLeadership };
+
+const getAnalytics = async (teamId, userId) => {
+  const team = await Team.findById(teamId)
+    .populate('members', 'name avatar skills')
+    .populate('hackathon', 'title startDate endDate requiredSkills');
+
+  if (!team) {
+    const err = new Error('Team not found');
+    err.status = 404;
+    throw err;
+  }
+
+  const isMember = team.members.some((m) => m._id.toString() === userId.toString());
+  if (!isMember) {
+    const err = new Error('You are not a member of this team');
+    err.status = 403;
+    throw err;
+  }
+
+  const tasks = await Task.find({ team: teamId })
+    .populate('assignedTo', 'name avatar')
+    .sort({ updatedAt: -1 });
+
+  const now = new Date();
+  const taskCounts = { todo: 0, inProgress: 0, done: 0, total: tasks.length };
+  let overdueCount = 0;
+
+  tasks.forEach((t) => {
+    if (t.status === 'TODO') taskCounts.todo += 1;
+    else if (t.status === 'IN_PROGRESS') taskCounts.inProgress += 1;
+    else if (t.status === 'DONE') taskCounts.done += 1;
+
+    if (t.dueDate && t.status !== 'DONE' && new Date(t.dueDate) < now) {
+      overdueCount += 1;
+    }
+  });
+
+  const completionRate = taskCounts.total === 0 ? 0 : Math.round((taskCounts.done / taskCounts.total) * 100);
+
+  // Per-member workload
+  const memberWorkload = team.members.map((member) => {
+    const memberTasks = tasks.filter((t) => t.assignedTo?._id?.toString() === member._id.toString());
+    return {
+      userId: member._id,
+      name: member.name,
+      avatar: member.avatar,
+      total: memberTasks.length,
+      todo: memberTasks.filter((t) => t.status === 'TODO').length,
+      inProgress: memberTasks.filter((t) => t.status === 'IN_PROGRESS').length,
+      done: memberTasks.filter((t) => t.status === 'DONE').length,
+    };
+  });
+  const unassignedCount = tasks.filter((t) => !t.assignedTo).length;
+
+  // Skill coverage (reuses the same engine as the dashboard / match service)
+  const requiredSkills = team.hackathon?.requiredSkills || [];
+  const skillCoverage = computeSkillCoverage(requiredSkills, team);
+
+  // Deadline countdown — nearer of start/end date
+  const startDate = team.hackathon?.startDate ? new Date(team.hackathon.startDate) : null;
+  const endDate = team.hackathon?.endDate ? new Date(team.hackathon.endDate) : null;
+  const targetDate = startDate && startDate > now ? startDate : endDate;
+  const daysLeft = targetDate ? Math.max(0, Math.ceil((targetDate - now) / 86400000)) : null;
+  const deadlineLabel = startDate && startDate > now ? 'Until hackathon starts' : 'Until hackathon ends';
+
+  // Recent activity — most recently updated tasks, simplest honest signal
+  // available without a dedicated audit-log system.
+  const recentActivity = tasks.slice(0, 8).map((t) => ({
+    taskId: t._id,
+    title: t.title,
+    status: t.status,
+    assignedToName: t.assignedTo?.name || null,
+    updatedAt: t.updatedAt,
+  }));
+
+  return {
+    teamId: team._id,
+    teamName: team.name,
+    progressPercent: completionRate,
+    completionRate,
+    taskCounts,
+    overdueCount,
+    unassignedCount,
+    memberWorkload,
+    skillCoverage,
+    deadline: { label: deadlineLabel, daysLeft },
+    recentActivity,
+  };
+};
+
+module.exports = {
+  create, getAll, getById, update, disband, leaveTeam, removeMember, transferLeadership, getAnalytics,
+};

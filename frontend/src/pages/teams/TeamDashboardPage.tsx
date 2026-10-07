@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     Crown, Users, ArrowLeft, CheckCircle2, AlertTriangle, Gauge,
-    MessageSquare, ListTodo, Bell, CalendarClock, UserMinus, Repeat,
+    MessageSquare, ListTodo, Bell, CalendarClock, UserMinus, Repeat, BarChart3,
 } from 'lucide-react';
 import { getRoleBadgeColor, formatDate, getScoreColor } from '@/lib/utils';
 import { useState } from 'react';
@@ -135,6 +135,11 @@ export default function TeamDashboardPage() {
                     )}
                 </div>
                 <div className="flex gap-2">
+                    <Link to={`/teams/${teamId}/analytics`}>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                            <BarChart3 className="h-3.5 w-3.5" /> Analytics
+                        </Button>
+                    </Link>
                     <Link to={`/teams/${teamId}`}>
                         <Button variant="outline" size="sm">Public Team Page</Button>
                     </Link>

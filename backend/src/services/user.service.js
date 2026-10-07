@@ -1,7 +1,9 @@
 const User = require('../models/user.model');
 
 const getById = async (id) => {
-  const user = await User.findById(id).select('-refreshToken');
+  const user = await User.findById(id)
+    .select('-refreshToken')
+    .populate('teams', 'name');
   if (!user) {
     const err = new Error('User not found');
     err.status = 404;
@@ -66,7 +68,7 @@ const getTeams = async (userId) => {
   const user = await User.findById(userId)
     .populate({
       path: 'teams',
-      select: 'name hackathon isOpen maxSize members',
+      select: 'name hackathon isOpen maxSize members leader',
       populate: { path: 'hackathon', select: 'title startDate mode' },
     })
     .select('teams');

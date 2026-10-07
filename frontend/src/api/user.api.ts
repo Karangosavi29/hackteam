@@ -1,5 +1,5 @@
 import api from './axios';
-import { User } from '@/types';
+import { User, Team } from '@/types';
 
 export const userApi = {
   getProfile: (id: string) => api.get<{ user: User }>(`/users/${id}`),
@@ -9,5 +9,6 @@ export const userApi = {
   searchUsers: (params: { skills?: string; role?: string; q?: string }) =>
     api.get<{ users: User[]; count: number }>('/users', { params }),
 
-  getUserTeams: (id: string) => api.get(`/users/${id}/teams`),
+  getUserTeams: (id: string) =>
+    api.get<{ teams: (Pick<Team, '_id' | 'name' | 'isOpen' | 'maxSize' | 'members'> & { leader: string; hackathon: Pick<Team['hackathon'], '_id' | 'title'> })[] }>(`/users/${id}/teams`),
 };

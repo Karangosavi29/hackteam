@@ -9,6 +9,7 @@ const {
   leaveTeam,
   removeMember,
   transferLeadership,
+  getTeamAnalytics,
 } = require('../controllers/team.controller');
 const { createTask, getTeamTasks } = require('../controllers/task.controller');
 const { getTeamMessages, sendTeamMessage } = require('../controllers/message.controller');
@@ -26,5 +27,6 @@ router.post('/:teamId/tasks', protect, createTask);
 router.get('/:teamId/tasks', protect, getTeamTasks);
 router.get('/:teamId/messages', protect, getTeamMessages);
 router.post('/:teamId/messages', protect, sendTeamMessage);
+router.get('/:teamId/analytics', protect, getTeamAnalytics);
 
 module.exports = router;

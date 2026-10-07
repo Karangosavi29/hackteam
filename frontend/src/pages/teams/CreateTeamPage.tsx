@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Users, X } from 'lucide-react';
+import { Loader2, Users } from 'lucide-react';
 import { ROLES } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -22,7 +21,8 @@ const teamSchema = z.object({
   maxSize: z.coerce.number().min(2).max(10),
 });
 
-type TeamForm = z.infer<typeof teamSchema>;
+type TeamFormInput = z.input<typeof teamSchema>;
+type TeamForm = z.output<typeof teamSchema>;
 
 export default function CreateTeamPage() {
   const navigate = useNavigate();
@@ -40,13 +40,14 @@ export default function CreateTeamPage() {
 
   const hackathons = hackathonsData?.data?.hackathons || [];
 
-  const { register, handleSubmit, formState: { errors } } = useForm<TeamForm>({
+  const { register, handleSubmit, formState: { errors } } = useForm<TeamFormInput, unknown, TeamForm>({
     resolver: zodResolver(teamSchema),
     defaultValues: {
       hackathon: prefilledHackathon,
       maxSize: 4,
     },
   });
+
 
   const { mutate, isPending, error } = useMutation({
     mutationFn: (data: TeamForm) => teamApi.create({ ...data, requiredRoles }),
@@ -136,11 +137,10 @@ export default function CreateTeamPage() {
                     key={r.value}
                     type="button"
                     onClick={() => toggleRole(r.value)}
-                    className={`px-3 py-1.5 text-xs rounded-full border font-medium transition-colors ${
-                      requiredRoles.includes(r.value)
-                        ? 'bg-violet-600 text-white border-violet-600'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'
-                    }`}
+                    className={`px-3 py-1.5 text-xs rounded-full border font-medium transition-colors ${requiredRoles.includes(r.value)
+                      ? 'bg-violet-600 text-white border-violet-600'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'
+                      }`}
                   >
                     {requiredRoles.includes(r.value) && '✓ '}{r.label}
                   </button>
