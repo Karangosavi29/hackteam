@@ -195,6 +195,38 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface TeamMemberWorkload {
+  userId: string;
+  name: string;
+  avatar: string;
+  total: number;
+  todo: number;
+  inProgress: number;
+  done: number;
+}
+
+export interface TeamActivityItem {
+  taskId: string;
+  title: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  assignedToName: string | null;
+  updatedAt: string;
+}
+
+export interface TeamAnalytics {
+  teamId: string;
+  teamName: string;
+  progressPercent: number;
+  completionRate: number;
+  taskCounts: { todo: number; inProgress: number; done: number; total: number };
+  overdueCount: number;
+  unassignedCount: number;
+  memberWorkload: TeamMemberWorkload[];
+  skillCoverage: { coverage: SkillCoverageItem[]; missingSkills: string[]; percentage: number };
+  deadline: { label: string; daysLeft: number | null };
+  recentActivity: TeamActivityItem[];
+}
+
 export interface Task {
   _id: string;
   team: string;

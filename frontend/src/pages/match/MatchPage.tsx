@@ -5,12 +5,15 @@ import { matchApi } from '@/api/match.api';
 import { hackathonApi } from '@/api/hackathon.api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UserCheck, Users, Star, Crown, SlidersHorizontal, CheckCircle2 } from 'lucide-react';
+import { UserCheck, Users, Star, Crown, SlidersHorizontal, CheckCircle2, UserPlus } from 'lucide-react';
 import { getRoleBadgeColor, ROLES, EXPERIENCE_LEVELS } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import InviteToTeamDialog from '@/components/requests/InviteToTeamDialog';
 
 export default function MatchPage() {
+  const [inviteTarget, setInviteTarget] = useState<{ id: string; name: string } | null>(null);
   const [hackathonId, setHackathonId] = useState('');
 
   // Filters
@@ -237,12 +240,22 @@ export default function MatchPage() {
                     </div>
                   )}
 
-                  <Link
-                    to={`/profile/${item.user._id}`}
-                    className="inline-block text-xs font-medium text-violet-600 hover:underline pt-1"
-                  >
-                    View Profile →
-                  </Link>
+                  <div className="flex items-center justify-between pt-1">
+                    <Link
+                      to={`/profile/${item.user._id}`}
+                      className="text-xs font-medium text-violet-600 hover:underline"
+                    >
+                      View Profile →
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => setInviteTarget({ id: item.user._id, name: item.user.name })}
+                    >
+                      <UserPlus className="h-3 w-3" /> Invite to Team
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -330,6 +343,15 @@ export default function MatchPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {inviteTarget && (
+        <InviteToTeamDialog
+          open={!!inviteTarget}
+          onOpenChange={(open) => !open && setInviteTarget(null)}
+          targetUserId={inviteTarget.id}
+          targetUserName={inviteTarget.name}
+        />
+      )}
     </div>
   );
 }

@@ -17,6 +17,7 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [typingUsers, setTypingUsers] = useState<Map<string, string>>(new Map());
 
@@ -26,7 +27,7 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
     let cancelled = false;
     const socket = socketRef.current;
 
-    const loadHistoryAndJoin = async () => {
+    const loadHistory = async () => {
       setLoading(true);
       setError(false);
       try {
@@ -37,19 +38,34 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
       } finally {
         if (!cancelled) setLoading(false);
       }
+    };
+    loadHistory();
 
-      socket.emit('join_team', teamId, (res: { success: boolean; onlineUsers?: { userId: string; name: string }[] }) => {
+    const joinRoom = () => {
+      socket.emit('join_team', teamId, (res: { success: boolean; onlineUsers?: { userId: string; name: string }[]; message?: string }) => {
         if (res.success && res.onlineUsers) {
           setOnlineUserIds(new Set(res.onlineUsers.map((u) => u.userId)));
+        } else if (!res.success) {
+          setConnectionError(res.message || 'Could not join this team\u2019s chat room.');
         }
       });
     };
 
     const onConnect = () => {
       setConnected(true);
-      loadHistoryAndJoin();
+      setConnectionError(null);
+      joinRoom();
     };
     const onDisconnect = () => setConnected(false);
+    const onConnectError = (err: Error) => {
+
+      console.error('Socket connection failed:', err.message);
+      setConnectionError(
+        err.message === 'websocket error'
+          ? 'Could not reach the chat server. Is the backend running?'
+          : err.message
+      );
+    };
 
     const onReceiveMessage = (msg: Message) => {
       setMessages((prev) => (prev.some((m) => m._id === msg._id) ? prev : [...prev, msg]));
@@ -82,6 +98,7 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
+    socket.on('connect_error', onConnectError);
     socket.on('receive_message', onReceiveMessage);
     socket.on('user_online', onUserOnline);
     socket.on('user_offline', onUserOffline);
@@ -97,6 +114,7 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
       socket.emit('leave_team', teamId);
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
+      socket.off('connect_error', onConnectError);
       socket.off('receive_message', onReceiveMessage);
       socket.off('user_online', onUserOnline);
       socket.off('user_offline', onUserOffline);
@@ -119,11 +137,17 @@ export default function ChatWindow({ teamId, currentUserId }: ChatWindowProps) {
         <span className="text-sm font-medium text-slate-600">
           {onlineUserIds.size} online
         </span>
-        <span className={`text-xs flex items-center gap-1.5 ${connected ? 'text-green-600' : 'text-slate-400'}`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-slate-300'}`} />
-          {connected ? 'Live' : 'Connecting...'}
+        <span className={`text-xs flex items-center gap-1.5 ${connected ? 'text-green-600' : connectionError ? 'text-red-500' : 'text-slate-400'}`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-green-500' : connectionError ? 'bg-red-500' : 'bg-slate-300'}`} />
+          {connected ? 'Live' : connectionError ? 'Connection failed' : 'Connecting...'}
         </span>
       </div>
+
+      {connectionError && (
+        <div className="px-4 py-2 bg-red-50 border-b border-red-100 text-xs text-red-600">
+          {connectionError}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex-1 flex items-center justify-center text-slate-400 gap-2">

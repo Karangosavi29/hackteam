@@ -14,6 +14,7 @@ import TeamDetailPage from '@/pages/teams/TeamDetailPage';
 import TeamDashboardPage from '@/pages/teams/TeamDashboardPage';
 import TeamTasksPage from '@/pages/teams/TeamTasksPage';
 import TeamChatPage from '@/pages/teams/TeamChatPage';
+import TeamAnalyticsPage from '@/pages/teams/TeamAnalyticsPage';
 import CreateTeamPage from '@/pages/teams/CreateTeamPage';
 import RequestsPage from '@/pages/requests/RequestsPage';
 import MatchPage from '@/pages/match/MatchPage';
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/teams/:teamId/dashboard" element={<ProtectedRoute><TeamDashboardPage /></ProtectedRoute>} />
           <Route path="/teams/:teamId/tasks" element={<ProtectedRoute><TeamTasksPage /></ProtectedRoute>} />
           <Route path="/teams/:teamId/chat" element={<ProtectedRoute><TeamChatPage /></ProtectedRoute>} />
+          <Route path="/teams/:teamId/analytics" element={<ProtectedRoute><TeamAnalyticsPage /></ProtectedRoute>} />
           <Route path="/requests" element={<ProtectedRoute><RequestsPage /></ProtectedRoute>} />
           <Route path="/match" element={<ProtectedRoute><MatchPage /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />

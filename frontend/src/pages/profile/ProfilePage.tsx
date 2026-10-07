@@ -1,18 +1,21 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { userApi } from '@/api/user.api';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GitBranch, Pencil, GraduationCap, Briefcase, ExternalLink } from 'lucide-react';
+import { GitBranch, Pencil, GraduationCap, Briefcase, ExternalLink, UserPlus } from 'lucide-react';
 import { getRoleBadgeColor } from '@/lib/utils';
+import InviteToTeamDialog from '@/components/requests/InviteToTeamDialog';
 
 export default function ProfilePage() {
   const { id } = useParams();
   const { user: authUser } = useAuthStore();
   const navigate = useNavigate();
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const profileId = id || authUser?._id;
   const isOwnProfile = !id || id === authUser?._id;
@@ -61,7 +64,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {isOwnProfile && (
+            {isOwnProfile ? (
               <Button
                 variant="outline"
                 size="sm"
@@ -70,6 +73,17 @@ export default function ProfilePage() {
               >
                 <Pencil className="h-3.5 w-3.5" /> Edit
               </Button>
+            ) : (
+              authUser && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setInviteOpen(true)}
+                  className="gap-1"
+                >
+                  <UserPlus className="h-3.5 w-3.5" /> Invite to Team
+                </Button>
+              )
             )}
           </div>
 
@@ -141,6 +155,15 @@ export default function ProfilePage() {
           )}
         </CardContent>
       </Card>
+
+      {!isOwnProfile && authUser && (
+        <InviteToTeamDialog
+          open={inviteOpen}
+          onOpenChange={setInviteOpen}
+          targetUserId={user._id}
+          targetUserName={user.name}
+        />
+      )}
     </div>
   );
 }

@@ -27,7 +27,8 @@ const hackathonSchema = z.object({
   registrationLink: z.string().url('Enter a valid URL').optional().or(z.literal('')),
 });
 
-type HackathonForm = z.infer<typeof hackathonSchema>;
+type HackathonFormInput = z.input<typeof hackathonSchema>;
+type HackathonForm = z.output<typeof hackathonSchema>;
 
 export default function CreateHackathonPage() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function CreateHackathonPage() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
-  const { register, handleSubmit, formState: { errors } } = useForm<HackathonForm>({
+  const { register, handleSubmit, formState: { errors } } = useForm<HackathonFormInput, unknown, HackathonForm>({
     resolver: zodResolver(hackathonSchema),
     defaultValues: { mode: 'online', maxTeamSize: 4, minTeamSize: 2 },
   });

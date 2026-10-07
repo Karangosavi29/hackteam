@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Trophy, Users, UserCheck, ArrowRight, Zap, Shield, Globe } from 'lucide-react';
+import { Sparkles, Trophy, Users, UserCheck, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const { isAuthenticated, user } = useAuthStore();
